@@ -1,0 +1,23 @@
+{
+	"dialog_title": "UCard Dialog",
+	"input_prompt": "Enter the theoretical resistance value",
+	"input_placeholder": "e.g., 5.12k, 4700, 1M",
+	"invalid_input_error": "Invalid input. Please enter a valid resistance value (e.g., 4.7k, 1M, 100).",
+	"error_title": "Error",
+	"unexpected_error": "An unexpected error occurred. Please try again.",
+	"select_series_title": "Select Resistor Series",
+	"select_series_placeholder": "Choose the standard series for matching",
+	"series_e12_desc": "E12 series (10% tolerance) - 12 values per decade",
+	"series_e24_desc": "E24 series (5% tolerance) - 24 values per decade",
+	"series_e48_desc": "E48 series (2% tolerance) - 48 values per decade",
+	"series_e96_desc": "E96 series (1% tolerance) - 96 values per decade",
+	"series_e192_desc": "E192 series (0.5% tolerance) - 192 values per decade",
+	"select_package_title": "Select Package",
+	"select_package_placeholder": "Choose resistor package size",
+	"result_title": "Match Found",
+	"result_message": "Closest Match: ${1}\nSeries: ${2} (±${3})\nOriginal Value: ${4}\nError: ${5}%",
+	"open_lcsc_title": "Open LCSC",
+	"open_lcsc_prompt": "Would you like to search for this resistor on LCSC (JLCPCB Mall)?",
+	"btn_yes": "Yes",
+	"btn_no": "No"
+}

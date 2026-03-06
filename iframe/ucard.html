@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-Hans">
+    <head>
+        <title>UCard 生成设置</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+            html { height: 100%; }
+            :root {
+                color-scheme: light;
+                --bg: #f3f4f6;
+                --card: #ffffff;
+                --text: #1f2937;
+                --subtle: #6b7280;
+                --line: #e5e7eb;
+                --primary: #2563eb;
+                --primary-weak: #dbeafe;
+            }
+            body {
+                margin: 0;
+                padding: 16px;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 13px;
+                color: var(--text);
+                background: var(--bg);
+                height: 100%;
+                box-sizing: border-box;
+                overflow-y: auto;
+            }
+            *, *::before, *::after { box-sizing: border-box; }
+            .card {
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            .title {
+                font-size: 16px;
+                font-weight: 600;
+                color: #111827;
+                margin-bottom: 8px;
+                border-bottom: 1px solid var(--line);
+                padding-bottom: 8px;
+            }
+            .form-grid {
+                display: grid;
+                grid-template-columns: 80px 1fr;
+                gap: 12px;
+                align-items: center;
+            }
+            label {
+                font-weight: 500;
+                color: #374151;
+            }
+            input, select {
+                font: inherit;
+                padding: 8px 10px;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                background: #fff;
+                outline: none;
+                width: 100%;
+                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+            input:focus, select:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            }
+            .actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+                margin-top: 16px;
+                padding-top: 16px;
+                border-top: 1px solid var(--line);
+            }
+            button {
+                cursor: pointer;
+                background: #f8fafc;
+                border: 1px solid #dbe2ea;
+                font-weight: 600;
+                color: #1f2937;
+                padding: 8px 16px;
+                border-radius: 6px;
+                transition: all 0.15s ease;
+            }
+            button:hover { background: #eef2f7; }
+            .btn-primary {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
+            .btn-primary:hover { background: #1d4ed8; }
+            .group-title {
+                grid-column: span 2;
+                font-size: 12px;
+                color: var(--subtle);
+                font-weight: bold;
+                text-transform: uppercase;
+                margin-top: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="title">配置 PCB 开发者名片</div>
+            
+            <div class="form-grid">
+                <div class="group-title">基本信息 (Basic)</div>
+                <label for="name">姓名</label>
+                <input id="name" type="text" placeholder="例如：LinQ" value="LinQ" />
+                
+                <label for="title">职位</label>
+                <input id="title" type="text" placeholder="头衔，如 Hardware Engineer" value="Hardware Engineer" />
+
+                <label for="company">公司</label>
+                <input id="company" type="text" placeholder="可选" value="Awesome Electronics" />
+                
+                <label for="phone">电话</label>
+                <input id="phone" type="text" placeholder="可选" value="+86 13800138000" />
+                
+                <label for="email">邮箱</label>
+                <input id="email" type="text" placeholder="可选" value="name@example.com" />
+                
+                <label for="website">网址</label>
+                <input id="website" type="text" placeholder="可选" value="www.example.com" />
+
+                <div class="group-title">开发者信息 (Developer)</div>
+                <label for="github">GitHub</label>
+                <input id="github" type="text" placeholder="可选" value="github.com/username" />
+                
+                <label for="techStack">技术栈</label>
+                <input id="techStack" type="text" placeholder="可选" value="C++/Python/FPGA" />
+                
+                <label for="slogan">Slogan</label>
+                <input id="slogan" type="text" placeholder="可选" value="Make Hardware Great Again" />
+
+                <div class="group-title">模板及参数 (Template & Options)</div>
+                <label for="templateId">模板</label>
+                <select id="templateId">
+                    <option value="mono">极简风设计 (Mono Grid)</option>
+                    <option value="aurora">物理叠层极光风 (Aurora)</option>
+                </select>
+
+                <label for="dimensions">尺寸 (mm)</label>
+                <input id="dimensions" type="text" placeholder="宽x高" value="85x54" />
+
+                <label for="layer">主要放置层</label>
+                <select id="layer">
+                    <option value="TOP">Top Layer (顶层)</option>
+                    <option value="BOTTOM">Bottom Layer (底层)</option>
+                </select>
+
+                <label for="debugLayout">布局调试</label>
+                <select id="debugLayout">
+                    <option value="OFF">关闭</option>
+                    <option value="ON">开启</option>
+                </select>
+            </div>
+
+            <div class="actions">
+                <button id="btnCancel">取消</button>
+                <button id="btnGenerate" class="btn-primary">生成名片</button>
+            </div>
+        </div>
+
+        <script>
+            // 自动侦测不同模板的默认尺寸
+            const templateEl = document.getElementById('templateId');
+            const dimensionsEl = document.getElementById('dimensions');
+
+            templateEl.addEventListener('change', () => {
+                if (templateEl.value === 'aurora') dimensionsEl.value = '90x54';
+                if (templateEl.value === 'mono') dimensionsEl.value = '85x54';
+            });
+
+            const edaApi = window.eda || window.parent?.eda || window.top?.eda;
+            const MESSAGE_TOPIC = 'UCard_Generator_Message';
+            const SVG_CONVERT_TOPIC = 'UCARD_SVG_CONVERT';
+            const SVG_RESULT_TOPIC = 'UCARD_SVG_RESULT';
+
+            function logInfo(message) {
+                try {
+                    if (edaApi?.sys_Log?.add) {
+                        edaApi.sys_Log.add(`[UCard-iframe] ${message}`, 1);
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+
+            function pushHostMessage(payload) {
+                try {
+                    if (edaApi?.sys_MessageBus?.pushPublic) {
+                        edaApi.sys_MessageBus.pushPublic(MESSAGE_TOPIC, payload);
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+
+            function pushSvgResult(payload) {
+                try {
+                    if (edaApi?.sys_MessageBus?.pushPublic) {
+                        edaApi.sys_MessageBus.pushPublic(SVG_RESULT_TOPIC, payload);
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+
+            async function convertSvgToPngBase64(svgString) {
+                return await new Promise((resolve, reject) => {
+                    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const image = new Image();
+
+                    image.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = image.naturalWidth || 900;
+                            canvas.height = image.naturalHeight || 540;
+                            const ctx = canvas.getContext('2d');
+                            if (!ctx) throw new Error('No 2D canvas context');
+                            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                            resolve(canvas.toDataURL('image/png'));
+                        } catch (error) {
+                            reject(error);
+                        } finally {
+                            URL.revokeObjectURL(url);
+                        }
+                    };
+
+                    image.onerror = (error) => {
+                        URL.revokeObjectURL(url);
+                        reject(new Error(`SVG decode failed: ${String(error)}`));
+                    };
+
+                    image.src = url;
+                });
+            }
+
+            function normalizeHostCommand(raw) {
+                if (!raw) return null;
+                if (raw.type === 'CONVERT_SVG') return raw;
+                if (raw.data?.type === 'CONVERT_SVG') return raw.data;
+                if (raw.cmd?.type === 'CONVERT_SVG') return raw.cmd;
+                return null;
+            }
+
+            async function handleHostCommand(raw) {
+                const cmd = normalizeHostCommand(raw);
+                if (!cmd) return;
+
+                try {
+                    const base64 = await convertSvgToPngBase64(cmd.svgString || '');
+                    pushHostMessage({ type: 'SVG_CONVERTED', id: cmd.id, base64 });
+                    pushSvgResult({ type: 'SVG_CONVERTED', id: cmd.id, base64 });
+                    logInfo(`SVG converted id=${cmd.id}`);
+                } catch (error) {
+                    pushHostMessage({ type: 'SVG_ERROR', id: cmd.id, error: String(error) });
+                    pushSvgResult({ type: 'SVG_ERROR', id: cmd.id, error: String(error) });
+                    logInfo(`SVG convert failed id=${cmd.id} err=${String(error)}`);
+                }
+            }
+
+            window.addEventListener('message', (event) => {
+                void handleHostCommand(event?.data);
+            });
+
+            if (edaApi?.sys_MessageBus?.pullPublic) {
+                try {
+                    edaApi.sys_MessageBus.pullPublic(SVG_CONVERT_TOPIC, (cmd) => {
+                        void handleHostCommand(cmd);
+                    });
+                } catch (error) {
+                    logInfo(`register pullPublic failed: ${String(error)}`);
+                }
+            }
+
+            document.getElementById('btnCancel').addEventListener('click', () => {
+                if (edaApi && edaApi.sys_MessageBus) {
+                    edaApi.sys_MessageBus.pushPublic('UCARD_CLOSE', {});
+                } else if (window.parent && window.parent.ucardPlugin) {
+                    window.parent.ucardPlugin.closeDialog();
+                } else if (window.eda && window.eda.sys_IFrame) {
+                    window.eda.sys_IFrame.closeIFrame('ucard-iframe');
+                } else {
+                    window.close();
+                }
+            });
+
+            document.getElementById('btnGenerate').addEventListener('click', () => {
+                const dims = dimensionsEl.value.toLowerCase().split('x').map(s => parseFloat(s.trim()));
+                if (dims.length !== 2 || isNaN(dims[0]) || isNaN(dims[1])) {
+                    alert('尺寸格式无效，请输入类似 85x54');
+                    return;
+                }
+
+                const profile = {
+                    name: document.getElementById('name').value,
+                    title: document.getElementById('title').value,
+                    company: document.getElementById('company').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    website: document.getElementById('website').value,
+                    github: document.getElementById('github').value,
+                    techStack: document.getElementById('techStack').value,
+                    slogan: document.getElementById('slogan').value,
+                    templateId: templateEl.value,
+                    widthMm: dims[0],
+                    heightMm: dims[1],
+                    layer: document.getElementById('layer').value === 'BOTTOM' ? 2 : 1, // 1 for TOP, 2 for BOTTOM
+                    debugLayout: document.getElementById('debugLayout').value === 'ON',
+                    timestamp: Date.now()
+                };
+
+                if (edaApi && edaApi.sys_MessageBus) {
+                    try {
+                        edaApi?.sys_Log?.add?.('IFrame: Sending UCARD_GENERATE', 1);
+                    } catch {
+                        // ignore log errors
+                    }
+                    edaApi.sys_MessageBus.pushPublic('UCARD_GENERATE', profile);
+                } else if (window.parent && window.parent.ucardPlugin) {
+                    window.parent.ucardPlugin.generateWithProfile(profile);
+                } else {
+                    alert('无法与宿主环境通信。请确保您在半离线客户端或正常浏览器环境内。');
+                }
+            });
+        </script>
+    </body>
+</html>
+

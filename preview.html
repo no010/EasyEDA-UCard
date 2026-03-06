@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UCard - PCB 名片设计 (Artistic Edition)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap');
+
+        :root {
+            --primary: #020617;
+            --secondary: #0f172a;
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --gold: #fbbf24;
+
+            /* Aurora Style Variables */
+            --au-mask: #111111; /* Solder Mask */
+            --au-trace: #262626; /* Hidden copper bulging under mask */
+            --au-core: #2d2a1e; /* Bare FR4 substrate */
+            --au-gold: #d4af37; /* ENIG Gold Surface Treatment */
+            --au-silk: #e5e5e5; /* Silkscreen */
+            --au-via: #000000; /* Via drill holes */
+
+            /* Mono Grid Style Variables */
+            --mn-mask: #f8fafc; /* Solder Mask */
+            --mn-trace: #e2e8f0; /* Hidden copper bulging */
+            --mn-core: #cdd0cb; /* Bare FR4 substrate */
+            --mn-gold: #eab308; /* ENIG Gold */
+            --mn-silk: #0f172a; /* Black Silkscreen */
+            --mn-via: #ffffff; /* Via drill holes */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--primary); color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+        header { 
+            text-align: center; 
+            padding: 80px 20px 40px; 
+            background: linear-gradient(180deg, var(--secondary), var(--primary)); 
+            border-bottom: 1px solid #1e293b; 
+        }
+        header h1 { 
+            font-size: 3.5em; 
+            font-weight: 900; 
+            margin-bottom: 15px; 
+            color: #fff; 
+            background: linear-gradient(135deg, #60a5fa, #fbbf24); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        header p { color: var(--text-muted); font-size: 1.2em; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 60px 20px; }
+
+        .template-section { margin-bottom: 120px; }
+        .section-title { font-size: 2.2em; font-weight: 800; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .section-title::before { content: ''; width: 5px; height: 32px; background: var(--accent); border-radius: 4px; }
+        
+        .badges { display: flex; gap: 10px; margin-bottom: 40px; flex-wrap: wrap; }
+        .badge { background: #1e293b; color: #60a5fa; padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 600; border: 1px solid #334155; }
+
+        .card-pair { display: flex; gap: 50px; justify-content: center; flex-wrap: wrap; }
+        .card-wrapper { display: flex; flex-direction: column; gap: 16px; align-items: center; }
+        .side-label { font-family: 'Space Mono', monospace; font-weight: 700; color: var(--text-muted); letter-spacing: 2px; }
+
+        .pcb-card {
+            width: 450px; height: 270px;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+            transition: transform 0.5s ease-out, box-shadow 0.5s ease-out;
+            cursor: pointer;
+        }
+        .pcb-card:hover {
+            transform: translateY(-8px) rotateX(8deg) rotateY(-4deg);
+            box-shadow: 20px 30px 60px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.15);
+        }
+
+        .svg-layer { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        
+        /* Aurora Layer Colors */
+        .au { background: var(--au-mask); }
+        .au-trace { stroke: var(--au-trace); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .au-core { fill: var(--au-core); }
+        .au-gold { fill: var(--au-gold); }
+        .au-gold-trace { stroke: var(--au-gold); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .au-silk { fill: var(--au-silk); }
+        .au-silk-line { stroke: var(--au-silk); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .au-via { fill: var(--au-via); }
+
+        /* Mono Layer Colors */
+        .mn { background: var(--mn-mask); }
+        .mn-trace { stroke: var(--mn-trace); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .mn-core { fill: var(--mn-core); }
+        .mn-gold { fill: var(--mn-gold); }
+        .mn-gold-trace { stroke: var(--mn-gold); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .mn-silk { fill: var(--mn-silk); }
+        .mn-silk-line { stroke: var(--mn-silk); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .mn-via { fill: var(--mn-via); }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>✨ UCard</h1>
+        <p>基于工业艺术标准的 PCB 名片生成工具 (前后双面展示)</p>
+    </header>
+
+    <div class="container">
+        <!-- Aurora Section -->
+        <div class="template-section">
+            <div class="section-title">Aurora - Matte Black</div>
+            <div class="badges">
+                <div class="badge">双面设计</div>
+                <div class="badge">暗黑阻焊 + 内层走线透显</div>
+                <div class="badge">沉金与开窗艺术</div>
+                <div class="badge">微距过孔阵列</div>
+            </div>
+            <div class="card-pair">
+                <!-- Aurora Front -->
+                <div class="card-wrapper">
+                    <div class="side-label">Front Side (Top)</div>
+                    <div class="pcb-card au">
+                        <svg viewBox="0 0 900 540" class="svg-layer">
+                            <defs>
+                                <pattern id="au-mesh" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                    <line x1="0" y1="15" x2="30" y2="15" class="au-trace" stroke-width="2"/>
+                                </pattern>
+                                <pattern id="au-bga" width="20" height="20" patternUnits="userSpaceOnUse">
+                                    <circle cx="10" cy="10" r="5" class="au-gold"/>
+                                </pattern>
+                            </defs>
+                            
+                            <!-- Bare FR4 Core Cutout -->
+                            <path d="M 750,0 L 900,0 L 900,540 L 700,540 Z" class="au-core" />
+                            
+                            <!-- Hidden Copper Traces under mask -->
+                            <rect x="0" y="320" width="450" height="220" fill="url(#au-mesh)" />
+                            <path d="M -50,100 L 200,100 L 300,200 L 700,200" class="au-trace" stroke-width="12"/>
+                            <path d="M -50,130 L 190,130 L 290,230 L 700,230" class="au-trace" stroke-width="12"/>
+                            <path d="M -50,160 L 180,160 L 280,260 L 700,260" class="au-trace" stroke-width="12"/>
+                            
+                            <!-- Exposed ENIG Gold & Vias -->
+                            <g class="au-gold">
+                                <circle cx="700" cy="200" r="16" />
+                                <circle cx="700" cy="230" r="16" />
+                                <circle cx="700" cy="260" r="16" />
+                            </g>
+                            <g class="au-via">
+                                <circle cx="700" cy="200" r="6" />
+                                <circle cx="700" cy="230" r="6" />
+                                <circle cx="700" cy="260" r="6" />
+                            </g>
+                            
+                            <path d="M 580,0 L 580,100 L 380,300 L 380,540" class="au-gold-trace" stroke-width="4"/>
+                            <path d="M 600,0 L 600,95  L 400,295 L 400,540" class="au-gold-trace" stroke-width="4"/>
+                            
+                            <!-- IC Footprint Box -->
+                            <rect x="30" y="30" width="120" height="120" fill="none" class="au-gold-trace" stroke-width="8" rx="10"/>
+                            <rect x="45" y="45" width="90" height="90" fill="url(#au-bga)" />
+
+                            <!-- Edge gold pads -->
+                            <g class="au-gold">
+                                <rect x="880" y="50" width="20" height="10" />
+                                <rect x="880" y="80" width="20" height="10" />
+                                <rect x="880" y="110" width="20" height="10" />
+                                <rect x="880" y="140" width="20" height="10" />
+                            </g>
+
+                            <!-- White Silkscreen Text -->
+                            <text x="180" y="110" font-family="Space Mono, monospace" font-size="70" font-weight="bold" class="au-silk">ZHANG SAN</text>
+                            <text x="185" y="150" font-family="Inter, sans-serif" font-size="28" font-weight="600" class="au-silk" opacity="0.8">HARDWARE ARCHITECT</text>
+                            
+                            <path d="M 30,500 L 250,500" class="au-silk-line" stroke-width="3"/>
+                            <path d="M 30,500 L 30,480" class="au-silk-line" stroke-width="3"/>
+                            <path d="M 250,500 L 250,480" class="au-silk-line" stroke-width="3"/>
+                            <text x="35" y="490" font-family="Space Mono, monospace" font-size="18" class="au-silk">REVISION: A</text>
+
+                            <text x="450" y="450" font-family="Space Mono, monospace" font-size="20" class="au-silk">>> C++ / RUST / PYTHON</text>
+                            <text x="450" y="480" font-family="Space Mono, monospace" font-size="20" class="au-silk">>> FPGA / RTOS</text>
+                            <text x="450" y="510" font-family="Space Mono, monospace" font-size="20" class="au-silk">>> HIGH-SPEED PCB DESIGN</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Aurora Back -->
+                <div class="card-wrapper">
+                    <div class="side-label">Back Side (Bottom)</div>
+                    <div class="pcb-card au">
+                        <svg viewBox="0 0 900 540" class="svg-layer">
+                            <!-- NFC Antenna hidden bulge -->
+                            <rect x="50" y="50" width="800" height="440" class="au-trace" stroke-width="12" fill="none" rx="20"/>
+                            <rect x="70" y="70" width="760" height="400" class="au-trace" stroke-width="12" fill="none" rx="15"/>
+                            
+                            <!-- NFC Coil Core Gold Exposed -->
+                            <rect x="50" y="50" width="800" height="440" class="au-gold-trace" stroke-width="6" fill="none" rx="20"/>
+                            <rect x="70" y="70" width="760" height="400" class="au-gold-trace" stroke-width="6" fill="none" rx="15"/>
+                            <path d="M 50,50 L 70,70" class="au-gold-trace" stroke-width="6"/>
+
+                            <!-- QR Pattern Mockup -->
+                            <g transform="translate(620, 150)">
+                                <!-- Core cutout as QR background -->
+                                <rect x="-10" y="-10" width="160" height="160" class="au-core"/>
+                                <rect x="0" y="0" width="140" height="140" class="au-silk-line" stroke-width="4"/>
+                                <rect x="10" y="10" width="30" height="30" class="au-silk"/>
+                                <rect x="100" y="10" width="30" height="30" class="au-silk"/>
+                                <rect x="10" y="100" width="30" height="30" class="au-silk"/>
+                                <!-- Small gold squares inside -->
+                                <rect x="18" y="18" width="14" height="14" class="au-gold"/>
+                                <rect x="108" y="18" width="14" height="14" class="au-gold"/>
+                                <rect x="18" y="108" width="14" height="14" class="au-gold"/>
+                                
+                                <path d="M 60,60 L 60,130 L 130,130 M 80,60 L 130,60 L 130,110 M 100,100 L 110,110 L 100,120" class="au-silk-line" stroke-width="6"/>
+                            </g>
+
+                            <!-- Data Specs -->
+                            <text x="120" y="200" font-family="Space Mono, monospace" font-size="24" class="au-gold">TEL  :</text>
+                            <text x="240" y="200" font-family="Space Mono, monospace" font-size="24" class="au-silk">+86 138-0013-8000</text>
+
+                            <text x="120" y="260" font-family="Space Mono, monospace" font-size="24" class="au-gold">MAIL :</text>
+                            <text x="240" y="260" font-family="Space Mono, monospace" font-size="24" class="au-silk">engineer@coolchip.io</text>
+
+                            <text x="120" y="320" font-family="Space Mono, monospace" font-size="24" class="au-gold">GIT  :</text>
+                            <text x="240" y="320" font-family="Space Mono, monospace" font-size="24" class="au-silk">github.com/zhangsan</text>
+                            
+                            <path d="M 120,380 L 500,380" class="au-gold-trace" stroke-width="1"/>
+
+                            <text x="120" y="440" font-family="Space Mono, monospace" font-size="16" class="au-silk" opacity="0.6">[ VCARD 3.0 READY ] SCAN QR -> ADD TO CONTACTS</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mono Grid Section -->
+        <div class="template-section">
+            <div class="section-title">Mono Grid - White Solder</div>
+            <div class="badges">
+                <div class="badge">双面设计</div>
+                <div class="badge">纯白阻焊 / 黑色工程丝印</div>
+                <div class="badge">大面积网格覆铜透感</div>
+                <div class="badge">几何开窗切割</div>
+            </div>
+            <div class="card-pair">
+                <!-- Mono Front -->
+                <div class="card-wrapper">
+                    <div class="side-label">Front Side (Top)</div>
+                    <div class="pcb-card mn">
+                        <svg viewBox="0 0 900 540" class="svg-layer">
+                            <defs>
+                                <pattern id="mn-dot" width="40" height="40" patternUnits="userSpaceOnUse">
+                                    <circle cx="4" cy="4" r="2" class="mn-trace"/>
+                                </pattern>
+                            </defs>
+                            
+                            <!-- Background Sub-Copper Grid Bulge -->
+                            <rect x="0" y="0" width="900" height="540" fill="url(#mn-dot)" />
+                            
+                            <!-- Bare Core Cutout Window -->
+                            <polygon points="400,0 600,0 200,540 0,540" class="mn-core" />
+                            
+                            <!-- Heavy Silk Frame -->
+                            <rect x="30" y="30" width="840" height="480" class="mn-silk-line" stroke-width="6"/>
+
+                            <!-- Center Gold Fiducial -->
+                            <circle cx="300" cy="270" r="60" class="mn-gold-trace" stroke-width="8"/>
+                            <path d="M 200,270 L 400,270" class="mn-gold-trace" stroke-width="8"/>
+                            <path d="M 300,170 L 300,370" class="mn-gold-trace" stroke-width="8"/>
+                            <circle cx="300" cy="270" r="20" class="mn-via"/>
+                            
+                            <!-- Bold Name Section -->
+                            <path d="M 500,120 L 850,120" class="mn-silk-line" stroke-width="14"/>
+                            <text x="500" y="100" font-family="Inter, sans-serif" font-size="80" font-weight="900" letter-spacing="4" class="mn-silk">LI SI</text>
+                            
+                            <text x="500" y="160" font-family="Space Mono, monospace" font-size="28" font-weight="700" class="mn-silk">EMBEDDED DEV</text>
+                            <text x="500" y="195" font-family="Space Mono, monospace" font-size="22" font-weight="400" class="mn-silk" opacity="0.8">INNOVATE IO</text>
+
+                            <!-- Geometry Art -->
+                            <rect x="700" y="350" width="40" height="40" class="mn-silk"/>
+                            <rect x="760" y="400" width="40" height="40" class="mn-silk"/>
+                            <rect x="820" y="350" width="40" height="40" class="mn-silk"/>
+                            <circle cx="720" cy="420" r="20" class="mn-silk-line" stroke-width="6"/>
+                            <circle cx="840" cy="420" r="20" class="mn-silk-line" stroke-width="6"/>
+                            
+                            <!-- Silk ruler -->
+                            <path d="M 30,500 L 40,500 M 30,490 L 50,490 M 30,480 L 40,480 M 30,470 L 60,470" class="mn-silk-line" stroke-width="2"/>
+                            <path d="M 870,500 L 860,500 M 870,490 L 850,490 M 870,480 L 860,480 M 870,470 L 840,470" class="mn-silk-line" stroke-width="2"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Mono Back -->
+                <div class="card-wrapper">
+                    <div class="side-label">Back Side (Bottom)</div>
+                    <div class="pcb-card mn">
+                        <svg viewBox="0 0 900 540" class="svg-layer">
+                            <!-- Traces under the right side -->
+                            <path d="M 0,100 L 100,100 L 150,150 L 150,540" class="mn-trace" stroke-width="20"/>
+                            <path d="M 0,140 L 80,140  L 120,180 L 120,540" class="mn-trace" stroke-width="20"/>
+                            <path d="M 0,180 L 60,180  L 90,210 L 90,540" class="mn-trace" stroke-width="20"/>
+                            
+                            <!-- Massive Silk Chart Table -->
+                            <rect x="250" y="80" width="580" height="380" class="mn-silk-line" stroke-width="6"/>
+                            
+                            <path d="M 450,80 L 450,460" class="mn-silk-line" stroke-width="4"/>
+                            
+                            <path d="M 250,156 L 830,156" class="mn-silk-line" stroke-width="2"/>
+                            <path d="M 250,232 L 830,232" class="mn-silk-line" stroke-width="2"/>
+                            <path d="M 250,308 L 830,308" class="mn-silk-line" stroke-width="2"/>
+                            <path d="M 250,384 L 830,384" class="mn-silk-line" stroke-width="2"/>
+
+                            <!-- Values -->
+                            <text x="280" y="130" font-family="Space Mono, monospace" font-size="24" font-weight="700" class="mn-silk">MOBILE</text>
+                            <text x="480" y="130" font-family="Space Mono, monospace" font-size="24" class="mn-silk">+86 189-0000-8888</text>
+
+                            <text x="280" y="206" font-family="Space Mono, monospace" font-size="24" font-weight="700" class="mn-silk">EMAIL</text>
+                            <text x="480" y="206" font-family="Space Mono, monospace" font-size="24" class="mn-silk">lisi@example.com</text>
+
+                            <text x="280" y="282" font-family="Space Mono, monospace" font-size="24" font-weight="700" class="mn-silk">GITHUB</text>
+                            <text x="480" y="282" font-family="Space Mono, monospace" font-size="24" class="mn-silk">github.com/lisi</text>
+
+                            <text x="280" y="358" font-family="Space Mono, monospace" font-size="24" font-weight="700" class="mn-silk">STACK</text>
+                            <text x="480" y="358" font-family="Space Mono, monospace" font-size="24" class="mn-silk">Rust / Go / ARM / RTOS</text>
+                            
+                            <text x="280" y="434" font-family="Space Mono, monospace" font-size="24" font-weight="700" class="mn-silk">VCARD 3.0</text>
+                            <text x="480" y="434" font-family="Space Mono, monospace" font-size="24" class="mn-silk">SCANNABLE QR ASSIGNED</text>
+
+                            <!-- Simple QR -->
+                            <rect x="50" y="200" width="160" height="160" class="mn-silk-line" stroke-width="4"/>
+                            <rect x="65" y="215" width="40" height="40" class="mn-silk"/>
+                            <rect x="155" y="215" width="40" height="40" class="mn-silk"/>
+                            <rect x="65" y="305" width="40" height="40" class="mn-silk"/>
+                            <rect x="120" y="260" width="75" height="85" class="mn-gold"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>

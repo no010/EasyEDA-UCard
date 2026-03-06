@@ -1,0 +1,49 @@
+{
+	"name": "easyeda-ucard",
+	"uuid": "7f1de4f8d38a4d9e9a7f4f0f0fda2c61",
+	"displayName": "UCard",
+	"description": "仅限 PCB 编辑器的开发者名片快速生成插件",
+	"version": "0.1.0",
+	"publisher": "",
+	"engines": {
+		"eda": "^3.0.0"
+	},
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/no010/EasyEDA-UCard"
+	},
+	"categories": "PCB Design",
+	"keywords": [
+		"UCard",
+		"PCB",
+		"名片",
+		"template",
+		"business card",
+		"easyeda",
+		"PCB名片"
+	],
+	"images": {
+		"logo": "./images/logo.png"
+	},
+	"homepage": "https://github.com/no010/EasyEDA-UCard",
+	"bugs": "https://github.com/no010/EasyEDA-UCard/issues",
+	"activationEvents": {},
+	"entry": "./dist/index",
+	"dependentExtensions": {},
+	"headerMenus": {
+		"pcb": [
+			{
+				"id": "UCard",
+				"title": "UCard",
+				"menuItems": [
+					{
+						"id": "generatePcbBusinessCard",
+						"title": "Generate PCB Business Card...",
+						"registerFn": "generatePcbBusinessCard"
+					}
+				]
+			}
+		]
+	}
+}
