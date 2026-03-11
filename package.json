@@ -1,7 +1,7 @@
 {
 	"name": "easyeda-ucard",
 	"version": "0.1.0",
-	"description": "EasyEDA Pro 扩展：模板化 PCB 名片生成（含电阻工具）",
+	"description": "EasyEDA Pro 扩展：PCB 名片工具集（模板导入 / 文本替换 / 二维码生成）",
 	"author": "no010",
 	"license": "Apache-2.0",
 	"homepage": "https://github.com/no010/EasyEDA-UCard",

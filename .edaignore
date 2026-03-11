@@ -6,6 +6,8 @@
 /coverage/
 /node_modules/
 /src/
+/docs/
+/tools/
 /.editorconfig
 /.gitattributes
 /.gitignore
@@ -16,3 +18,4 @@
 /tsconfig.json
 .eslintcache
 debug.log
+Log_*.txt

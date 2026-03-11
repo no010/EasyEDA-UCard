@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 const fs = require('node:fs');
 const path = require('node:path');
+const process = require('node:process');
 
 const ROOT = process.cwd();
 const DTS_PATH = path.join(ROOT, 'node_modules', '@jlceda', 'pro-api-types', 'index.d.ts');

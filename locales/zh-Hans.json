@@ -1,23 +1,4 @@
 {
-	"dialog_title": "查找标准电阻值",
-	"input_prompt": "请输入理论电阻值",
-	"input_placeholder": "例如: 5.12k, 4700, 1M",
-	"invalid_input_error": "输入无效。请输入有效的电阻值（例如: 4.7k, 1M, 100）。",
-	"error_title": "错误",
-	"unexpected_error": "发生意外错误，请重试。",
-	"select_series_title": "选择电阻系列",
-	"select_series_placeholder": "选择用于匹配的标准系列",
-	"series_e12_desc": "E12 系列（10% 精度）- 每十倍频程 12 个值",
-	"series_e24_desc": "E24 系列（5% 精度）- 每十倍频程 24 个值",
-	"series_e48_desc": "E48 系列（2% 精度）- 每十倍频程 48 个值",
-	"series_e96_desc": "E96 系列（1% 精度）- 每十倍频程 96 个值",
-	"series_e192_desc": "E192 系列（0.5% 精度）- 每十倍频程 192 个值",
-	"select_package_title": "选择封装",
-	"select_package_placeholder": "选择电阻封装尺寸",
-	"result_title": "找到匹配",
-	"result_message": "最接近值: ${1}\n系列: ${2} (±${3})\n原始值: ${4}\n误差: ${5}%",
-	"open_lcsc_title": "打开立创商城",
-	"open_lcsc_prompt": "是否在立创商城（LCSC）搜索此电阻？",
-	"btn_yes": "是",
-	"btn_no": "否"
+"error_title": "错误",
+"unexpected_error": "发生意外错误，请重试。"
 }

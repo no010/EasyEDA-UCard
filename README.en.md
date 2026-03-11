@@ -2,7 +2,7 @@
 
 # EasyEDA-UCard
 
-**Template-driven PCB Business Card Generator — EasyEDA Pro Extension**
+PCB Business Card Toolkit — EasyEDA Pro Extension
 
 [![GitHub Repo Stars](https://img.shields.io/github/stars/no010/EasyEDA-UCard)](https://github.com/no010/EasyEDA-UCard)
 [![GitHub Issues](https://img.shields.io/github/issues/no010/EasyEDA-UCard)](https://github.com/no010/EasyEDA-UCard/issues)
@@ -10,7 +10,17 @@
 
 ## Overview
 
-Generate stylish PCB business cards in EasyEDA Pro with a template system (`Aurora` / `Mono`). The plugin is PCB-editor only and focused on helping developers create their own PCB name cards quickly.
+**EasyEDA-UCard** is an EasyEDA Pro extension (PCB editor only) that provides three focused tools for creating PCB business cards:
+
+| # | Menu Item | Description |
+|---|-----------|-------------|
+| 1 | **Import Card Template** | Import the built-in epro2 template (or your own local template) into the current project |
+| 2 | **Replace Card Text** | Read all text primitives in the current PCB and replace them in bulk |
+| 3 | **Generate Card QR Code** | Place a vCard contact QR code or image QR code on the PCB |
+
+### Demo
+
+![EasyEDA-UCard Demo](./images/demo.gif)
 
 ## Installation
 
@@ -18,8 +28,7 @@ Generate stylish PCB business cards in EasyEDA Pro with a template system (`Auro
 
 1. Open EasyEDA Pro
 2. Click **Extensions → Manage Extensions**
-3. Search for **UCard** in the marketplace
-4. Click **Install** to complete installation
+3. Search for **UCard** and click **Install**
 
 See [LCEDA Installation Guide](https://prodocs.lceda.cn/en/api/guide/how-to-install.html) or visit [LCEDA Extension Market](https://ext.lceda.cn/).
 
@@ -28,56 +37,73 @@ See [LCEDA Installation Guide](https://prodocs.lceda.cn/en/api/guide/how-to-inst
 Requires Node.js >= 20.17.0
 
 ```shell
-# 1. Clone repository
 git clone https://github.com/no010/EasyEDA-UCard.git
 cd EasyEDA-UCard
-
-# 2. Install dependencies
 npm install
-
-# 3. Build extension package
 npm run build
-
-# 4. Find the generated .eext file in ./build/dist/ and install it
+# Install the .eext file from ./build/dist/
 ```
 
-## Features Demo
+## Usage
 
-![EasyEDA-UCard Demo](./images/demo.gif)
+### Step 1: Import Card Template
 
-## Features
+1. Open the PCB editor
+2. Click **UCard > 1. Import Card Template...**
+3. The built-in `ucard.epro2` template is used by default; click "Replace with local template" to use your own epro2 file
+4. Click "Import Card Template" — the dialog closes immediately and the template is imported in the background
+5. A notification appears on completion; the built-in template keeps placeholder text (e.g. `{{name}}`) for Step 2
 
-- **PCB business card generator**: Create card outline and dot-matrix copper text from your profile fields
-- **Template-driven architecture**: Select a card template and extend with new templates easily (`Aurora Signature` + `Mono Grid`)
-- **Bilingual**: Full English & Chinese support
-- **PCB-only workflow**: Available only in PCB editor toolbar for fast card creation
+### Step 2: Replace Card Text
 
-## Quick Start
+1. Make sure you are on a PCB editor tab
+2. Click **UCard > 2. Replace Card Text...**
+3. All text primitives in the current PCB are listed with their current content
+4. Edit the values you want to change, then click "Replace Card Text"
 
-### Generate PCB Business Card
+### Step 3: Generate Card QR Code (optional)
 
-1. In PCB editor, move the mouse to the target top-left position
-2. Click **UCard → Generate PCB Business Card...**
-3. Select a template first (`AURORA` or `MONO`)
-4. Enter name, title, company, phone, email, website, and card size
-5. Choose target copper layer (`TOP` / `BOTTOM`)
-6. The plugin creates board outline and template graphics + dot-matrix copper text
+1. Click **UCard > 3. Generate Card QR Code...**
+2. Two modes available:
+   - **vCard Contact**: fill in name, phone, email, etc. — scanning with WeChat or a phone camera saves contact directly
+   - **Image QR Code**: upload or paste a PNG/JPG image to convert it to copper fill
 
-### Aurora Signature Template
+## Development
 
-- Elegant dual-column layout (identity on left, contact on right)
-- Inner frame, separator, and corner marks for visual structure
-- Strong hierarchy with larger name title and compact supporting lines
+```shell
+npm install       # install dependencies
+npm run compile   # compile only (no bundling)
+npm run lint      # lint
+npm run build     # build release package → build/dist/
+```
 
-### Mono Grid Template
+### Project Structure
 
-- Minimalist grid composition with clear structure
-- Engineering-style label column (`NAME / ROLE / ORG / TEL / WEB`)
-- Restrained visual rhythm for a clean technical identity
+```
+src/
+├── index.ts                         # entry: exports three menu functions
+├── core/
+│   ├── template-contract.ts         # type definitions & utilities
+│   ├── template-local-loader.ts     # built-in / local template loader (GitHub fallback)
+│   ├── template-fallback-renderer.ts# fallback draw mode for local templates
+│   ├── epro2-import-executor.ts     # epro2 import + text replacement
+│   ├── qr-generator.ts              # QR matrix generation
+│   └── qr-pcb-placer.ts             # QR placement on PCB
+└── ui/
+    └── pcb-card-generator.ts        # message bus handlers + IFrame lifecycle
+iframe/
+├── import.html                      # Step 1 UI
+├── apply.html                       # Step 2 UI
+└── qrcode.html                      # Step 3 UI
+templates/
+└── ucard.epro2                      # built-in card template
+locales/                             # i18n files
+extension.json                       # extension manifest
+```
 
 ## License
 
-This project uses [Apache License 2.0](https://choosealicense.com/licenses/apache-2.0/).
+[Apache License 2.0](https://choosealicense.com/licenses/apache-2.0/)
 
 ---
 

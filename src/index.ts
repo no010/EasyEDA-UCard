@@ -16,4 +16,4 @@ export function activate(status?: 'onStartupFinished', arg?: string): void {
  * Generate PCB business card directly on PCB canvas
  * This function is registered in extension.json headerMenus
  */
-export { generatePcbBusinessCard } from './ui/pcb-card-generator';
+export { generatePcbBusinessCard, applyPcbBusinessCardText, generateQrCode } from './ui/pcb-card-generator';

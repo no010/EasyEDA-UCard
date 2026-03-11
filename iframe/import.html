@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="zh-Hans">
+    <head>
+        <title>UCard 模板化生成</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+            :root {
+                --bg: #eef2f7;
+                --card: #ffffff;
+                --text: #1f2937;
+                --muted: #6b7280;
+                --line: #d6dde8;
+                --primary: #0f766e;
+                --primary-hover: #0b5d57;
+                --danger: #b91c1c;
+            }
+            html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; }
+            body { padding: 16px; }
+            .card {
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                padding: 16px;
+                box-shadow: 0 6px 16px rgba(13, 36, 61, 0.08);
+            }
+            .title {
+                font-size: 16px;
+                font-weight: 700;
+                margin-bottom: 12px;
+            }
+            .sub {
+                color: var(--muted);
+                font-size: 12px;
+                margin-bottom: 12px;
+            }
+            .row {
+                display: grid;
+                grid-template-columns: 96px 1fr;
+                gap: 8px;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+            label {
+                font-weight: 600;
+                font-size: 12px;
+            }
+            select, input, textarea {
+                width: 100%;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                padding: 8px 10px;
+                font: inherit;
+                outline: none;
+                background: #fff;
+                color: var(--text);
+            }
+            textarea {
+                min-height: 60px;
+                resize: vertical;
+            }
+            select:focus, input:focus, textarea:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+            }
+            .group {
+                margin-top: 12px;
+                border-top: 1px solid var(--line);
+                padding-top: 10px;
+            }
+            .group-title {
+                font-size: 12px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin-bottom: 8px;
+                font-weight: 700;
+            }
+            .field-help {
+                grid-column: 2;
+                margin-top: -4px;
+                margin-bottom: 4px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .meta {
+                margin-bottom: 10px;
+                border: 1px dashed var(--line);
+                border-radius: 8px;
+                padding: 8px;
+                font-size: 12px;
+                color: var(--muted);
+                background: #fafbfd;
+            }
+            .error {
+                color: var(--danger);
+                font-size: 12px;
+                margin-bottom: 8px;
+                white-space: pre-wrap;
+            }
+            .is-hidden {
+                display: none;
+            }
+            .actions {
+                margin-top: 14px;
+                padding-top: 10px;
+                border-top: 1px solid var(--line);
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+            button {
+                border: 1px solid var(--line);
+                background: #f5f7fa;
+                color: var(--text);
+                border-radius: 8px;
+                padding: 8px 14px;
+                cursor: pointer;
+                font-weight: 600;
+            }
+            button:hover { background: #e9edf3; }
+            .btn-primary {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
+            .btn-primary:hover { background: var(--primary-hover); }
+            .template-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; background:#f5f7fa; border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-bottom:10px; }
+            .template-bar-label { display:flex; align-items:center; gap:6px; font-size:13px; overflow:hidden; }
+            .template-bar-tag { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; white-space:nowrap; }
+            #templateNameDisplay { font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+            .btn-sm { font-size:12px; padding:5px 10px; white-space:nowrap; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div id="mainTitle" class="title">1. 导入模板化名片</div>
+            <div id="mainSub" class="sub">选择模板后直接导入。占位符文本保留在 PCB 中，可在第 2 步「替换名片文本」中修改。</div>
+
+            <div id="errorBox" class="error is-hidden"></div>
+
+            <div class="template-bar">
+                <div class="template-bar-label">
+                    <span class="template-bar-tag">模板</span>
+                    <span id="templateNameDisplay">加载中...</span>
+                </div>
+                <button id="btnImportLocal" class="btn-sm">替换为本地模板…</button>
+            </div>
+
+            <div class="meta" id="templateMeta">加载模板中...</div>
+
+            <div class="actions">
+                <button id="btnCancel">取消</button>
+                <button id="btnGenerate" class="btn-primary">导入名片模板</button>
+            </div>
+        </div>
+
+        <script>
+            const IFRAME_LOG_PREFIX = '[UCard][Iframe]';
+            let bootstrapEdaApi = null; try { bootstrapEdaApi = window.parent?.eda || window.top?.eda || window.eda; } catch(e) { console.error(e); }
+
+            function bootstrapLog(message, type) {
+                try {
+                    bootstrapEdaApi?.sys_Log?.add?.(`${IFRAME_LOG_PREFIX} ${message}`, type || 1);
+                } catch {
+                    // ignore bootstrap logging failures
+                }
+            }
+
+            bootstrapLog(`bootstrap start | readyState=${document.readyState} | hasWindowEda=${window.eda ? 'yes' : 'no'} | hasParentEda=${window.parent?.eda ? 'yes' : 'no'} | hasTopEda=${window.top?.eda ? 'yes' : 'no'}`);
+
+            try {
+            const edaApi = bootstrapEdaApi;
+            const TOPIC_GENERATE = 'UCARD_GENERATE';
+            const TOPIC_CLOSE = 'UCARD_CLOSE';
+            const TOPIC_LOAD_TEMPLATES_REQUEST = 'UCARD_LOAD_TEMPLATES_REQUEST';
+            const TOPIC_LOAD_TEMPLATES_RESPONSE = 'UCARD_LOAD_TEMPLATES_RESPONSE';
+            const TOPIC_IMPORT_LOCAL_TEMPLATE_REQUEST = 'UCARD_IMPORT_LOCAL_TEMPLATE_REQUEST';
+            const TOPIC_IMPORT_LOCAL_TEMPLATE_RESPONSE = 'UCARD_IMPORT_LOCAL_TEMPLATE_RESPONSE';
+
+            const errorBox = document.getElementById('errorBox');
+            const templateNameDisplay = document.getElementById('templateNameDisplay');
+            const templateMeta = document.getElementById('templateMeta');
+
+            bootstrapLog(`bootstrap dom refs | errorBox=${errorBox ? 'yes' : 'no'} | templateNameDisplay=${templateNameDisplay ? 'yes' : 'no'} | templateMeta=${templateMeta ? 'yes' : 'no'}`);
+
+            let currentSelection = null; // { sourceId, templateId, templateName, sourceLabel, version, widthMm, heightMm }
+            const manifestCache = new Map();
+            const responseRouterTopics = new Set();
+            const pendingRequests = new Map();
+            let localImportEventBridgeRegistered = false;
+
+            function logWithType(message, type) {
+                try {
+                    if (!edaApi?.sys_Log?.add)
+                        return;
+                    edaApi.sys_Log.add(`${IFRAME_LOG_PREFIX} ${message}`, type);
+                } catch {
+                    // ignore logging failures
+                }
+            }
+
+            function logInfo(message) {
+                logWithType(message, 1);
+            }
+
+            function logWarn(message) {
+                logWithType(message, 2);
+            }
+
+            function logError(message) {
+                logWithType(message, 3);
+            }
+
+            function templateKey(item) {
+                return `${item.sourceId}::${item.templateId}`;
+            }
+
+            function showError(message) {
+                errorBox.classList.toggle('is-hidden', !message);
+                errorBox.textContent = message || '';
+                if (message)
+                    logWarn(`showError | ${message}`);
+            }
+
+            function pushPublic(topic, payload) {
+                if (!edaApi?.sys_MessageBus?.pushPublic)
+                    throw new Error('sys_MessageBus.pushPublic unavailable');
+                edaApi.sys_MessageBus.pushPublic(topic, payload);
+            }
+
+            function pullPublic(topic, callback) {
+                const bus = edaApi?.sys_MessageBus;
+                if (!bus)
+                    throw new Error('sys_MessageBus unavailable');
+                let registered = false;
+                let lastError = '';
+
+                if (typeof bus.pullPublic === 'function') {
+                    try {
+                        bus.pullPublic(topic, callback);
+                        registered = true;
+                    } catch (error) {
+                        lastError = String(error);
+                    }
+                }
+
+                if (typeof bus.subscribePublic === 'function') {
+                    try {
+                        bus.subscribePublic(topic, callback);
+                        registered = true;
+                    } catch (error) {
+                        lastError = String(error);
+                    }
+                }
+
+                if (!registered)
+                    throw new Error(`sys_MessageBus listener registration failed: ${lastError || 'pullPublic/subscribePublic unavailable'}`);
+            }
+
+            function pendingKey(responseTopic, requestId) {
+                return `${responseTopic}::${requestId}`;
+            }
+
+            function firstPendingKeyByTopic(responseTopic) {
+                const prefix = `${responseTopic}::`;
+                for (const key of pendingRequests.keys()) {
+                    if (key.startsWith(prefix))
+                        return key;
+                }
+                return '';
+            }
+
+            function unwrapBusMessage(value) {
+                if (!value || typeof value !== 'object')
+                    return value;
+                if (value.message && typeof value.message === 'object')
+                    return value.message;
+                return value;
+            }
+
+            function looksLikeBusMessage(value) {
+                return !!value
+                    && typeof value === 'object'
+                    && (
+                        'id' in value
+                        || 'requestId' in value
+                        || 'type' in value
+                        || 'payload' in value
+                        || 'error' in value
+                        || 'message' in value
+                    );
+            }
+
+            function extractBusMessage(args) {
+                if (!Array.isArray(args) || args.length === 0)
+                    return undefined;
+
+                // Prefer the right-most object-like argument, works for callback(topic, type, message)
+                // and callback(message) forms.
+                for (let index = args.length - 1; index >= 0; index -= 1) {
+                    const candidate = unwrapBusMessage(args[index]);
+                    if (looksLikeBusMessage(candidate))
+                        return candidate;
+                }
+
+                if (args.length === 1)
+                    return unwrapBusMessage(args[0]);
+
+                const first = args[0];
+                const second = args[1];
+                const third = args[2];
+                if (typeof first === 'string' && typeof third !== 'undefined')
+                    return unwrapBusMessage(third);
+                if (typeof first === 'string')
+                    return unwrapBusMessage(second);
+                return unwrapBusMessage(second ?? first);
+            }
+
+            function extractResponseId(msg) {
+                const idCandidate = msg?.id ?? msg?.requestId ?? msg?.payload?.id;
+                return String(idCandidate || '');
+            }
+
+            function responseTypeOf(msg) {
+                return typeof msg?.type === 'string' ? msg.type : '';
+            }
+
+            function ensureResponseRouter(responseTopic) {
+                if (responseRouterTopics.has(responseTopic))
+                    return;
+
+                pullPublic(responseTopic, (...args) => {
+                    const msg = extractBusMessage(args);
+                    const id = extractResponseId(msg);
+                    let key = id ? pendingKey(responseTopic, id) : '';
+                    if (!key || !pendingRequests.has(key)) {
+                        key = firstPendingKeyByTopic(responseTopic);
+                        if (key && !id)
+                            logWarn(`response id missing, fallback route | topic=${responseTopic} | key=${key}`);
+                    }
+                    if (!key)
+                        return;
+
+                    const pending = pendingRequests.get(key);
+                    if (!pending)
+                        return;
+
+                    const msgType = responseTypeOf(msg);
+                    if (!msgType) {
+                        logWarn(`response ignored: invalid payload | topic=${responseTopic} | id=${id || pending.requestId || 'n/a'}`);
+                        return;
+                    }
+
+                    if (msgType !== pending.acceptType && msgType !== pending.errorType) {
+                        logWarn(`response ignored | topic=${responseTopic} | id=${id || pending.requestId || 'n/a'} | type=${msgType}`);
+                        return;
+                    }
+
+                    clearTimeout(pending.timeout);
+                    pendingRequests.delete(key);
+                    if (msgType === pending.acceptType) {
+                        logInfo(`response routed success | topic=${responseTopic} | id=${id || pending.requestId} | type=${msgType}`);
+                        pending.resolve(msg);
+                    } else {
+                        const errorText = String(msg.error || 'request failed');
+                        logWarn(`response routed error | topic=${responseTopic} | id=${id || pending.requestId} | error=${errorText}`);
+                        pending.reject(new Error(errorText));
+                    }
+                });
+
+                responseRouterTopics.add(responseTopic);
+                logInfo(`response router registered | topic=${responseTopic}`);
+            }
+
+            function request(topic, payload, responseTopic, acceptType, errorType, timeoutMs = 10000) {
+                const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                logInfo(`request start | topic=${topic} | id=${requestId} | timeoutMs=${timeoutMs}`);
+                return new Promise((resolve, reject) => {
+                    ensureResponseRouter(responseTopic);
+
+                    const timeout = setTimeout(() => {
+                        pendingRequests.delete(pendingKey(responseTopic, requestId));
+                        logWarn(`request timeout | topic=${topic} | id=${requestId}`);
+                        reject(new Error('request timeout'));
+                    }, timeoutMs);
+                    pendingRequests.set(pendingKey(responseTopic, requestId), {
+                        requestId,
+                        resolve: (msg) => {
+                            logInfo(`request success | topic=${topic} | id=${requestId} | type=${msg.type}`);
+                            resolve(msg);
+                        },
+                        reject: (error) => {
+                            logWarn(`request error | topic=${topic} | id=${requestId} | error=${String(error)}`);
+                            reject(error);
+                        },
+                        acceptType,
+                        errorType,
+                        timeout,
+                    });
+                    logInfo(`request pushPublic | topic=${topic} | id=${requestId}`);
+                    pushPublic(topic, Object.assign({ id: requestId }, payload || {}));
+                });
+            }
+
+            function updateTemplateMeta(item) {
+                if (!item) {
+                    templateMeta.textContent = '无可用模板';
+                    return;
+                }
+                const parts = [item.version];
+                if (item.widthMm && item.heightMm)
+                    parts.push(`${item.widthMm} x ${item.heightMm} mm`);
+                if (item.description)
+                    parts.push(item.description);
+                templateMeta.textContent = parts.join(' | ');
+            }
+
+            async function selectTemplate(item) {
+                if (!item) {
+                    currentSelection = null;
+                    templateNameDisplay.textContent = '无可用模板';
+                    updateTemplateMeta(null);
+                    return;
+                }
+                currentSelection = item;
+                templateNameDisplay.textContent = item.sourceId === 'builtin-local'
+                    ? `${item.templateName}（内置）`
+                    : `${item.templateName}（本地）`;
+                updateTemplateMeta(item);
+                logInfo(`selectTemplate | sourceId=${item.sourceId} | templateId=${item.templateId}`);
+            }
+
+            async function loadTemplates() {
+                showError('');
+                templateMeta.textContent = '加载模板列表中...';
+                logInfo('loadTemplates start');
+                const response = await request(
+                    TOPIC_LOAD_TEMPLATES_REQUEST,
+                    { forceRefresh: false },
+                    TOPIC_LOAD_TEMPLATES_RESPONSE,
+                    'UCARD_TEMPLATE_INDEX',
+                    'UCARD_TEMPLATE_INDEX_ERROR',
+                    20000,
+                );
+
+                const templates = Array.isArray(response.templates) ? response.templates : [];
+                logInfo(`loadTemplates response | templates=${templates.length}`);
+                await selectTemplate(templates[0] ?? null);
+            }
+
+            async function applyImportedTemplatePayload(payload, reason) {
+                if (!payload || !payload.summary) {
+                    logInfo(`applyImportedTemplatePayload skipped | reason=${reason} | payload=empty`);
+                    return false;
+                }
+
+                const imported = payload.summary;
+                logInfo(`applyImportedTemplatePayload done | reason=${reason} | sourceId=${imported.sourceId} | templateId=${imported.templateId}`);
+                await selectTemplate(imported);
+                return true;
+            }
+
+            function registerLocalImportEventBridge() {
+                if (localImportEventBridgeRegistered)
+                    return;
+
+                pullPublic(TOPIC_IMPORT_LOCAL_TEMPLATE_RESPONSE, (...args) => {
+                    const msg = extractBusMessage(args);
+                    const msgType = responseTypeOf(msg);
+                    if (!msgType)
+                        return;
+
+                    if (msgType === 'UCARD_LOCAL_TEMPLATE_ERROR') {
+                        logWarn(`local import event error | ${String(msg?.error || 'request failed')}`);
+                        return;
+                    }
+                    if (msgType !== 'UCARD_LOCAL_TEMPLATE_SELECTED')
+                        return;
+
+                    void applyImportedTemplatePayload(msg?.payload, 'event-bridge').catch(error => {
+                        logWarn(`local import event apply failed | ${String(error)}`);
+                    });
+                });
+
+                localImportEventBridgeRegistered = true;
+                logInfo('local import event bridge registered');
+            }
+
+            async function importLocalTemplate() {
+                showError('');
+                logInfo('importLocalTemplate start');
+                let response;
+                try {
+                    response = await request(
+                        TOPIC_IMPORT_LOCAL_TEMPLATE_REQUEST,
+                        {},
+                        TOPIC_IMPORT_LOCAL_TEMPLATE_RESPONSE,
+                        'UCARD_LOCAL_TEMPLATE_SELECTED',
+                        'UCARD_LOCAL_TEMPLATE_ERROR',
+                        30000,
+                    );
+                } catch (error) {
+                    // Host may have imported successfully while response routing is delayed/missed.
+                    logWarn(`importLocalTemplate request failed, fallback refresh | ${String(error)}`);
+                    await loadTemplates();
+                    return;
+                }
+
+                const applied = await applyImportedTemplatePayload(response.payload, 'request-response');
+                if (!applied)
+                    logInfo('importLocalTemplate canceled or empty payload');
+            }
+
+            function closeDialog() {
+                try {
+                    pushPublic(TOPIC_CLOSE, {});
+                } catch {
+                    window.close();
+                }
+            }
+
+            async function generateCard() {
+                logInfo('generateCard start');
+                const selected = currentSelection;
+                if (!selected) {
+                    showError('请先选择模板');
+                    return;
+                }
+
+                logInfo(`generateCard selection | sourceId=${selected.sourceId} | templateId=${selected.templateId}`);
+
+                const payload = {
+                    selection: {
+                        sourceId: selected.sourceId,
+                        templateId: selected.templateId,
+                    },
+                    values: {},
+                    timestamp: Date.now(),
+                };
+
+                try {
+                    pushPublic(TOPIC_GENERATE, payload);
+                    logInfo('generateCard pushPublic success | TOPIC_GENERATE');
+                    closeDialog();
+                } catch (error) {
+                    logError(`generateCard pushPublic failed | ${String(error)}`);
+                    showError(`无法发送请求：${String(error)}`);
+                }
+            }
+
+            document.getElementById('btnCancel').addEventListener('click', closeDialog);
+            document.getElementById('btnImportLocal').addEventListener('click', async () => {
+                logInfo('click btnImportLocal');
+                try {
+                    await importLocalTemplate();
+                } catch (error) {
+                    showError(`导入本地模板失败：${String(error)}`);
+                }
+            });
+            document.getElementById('btnGenerate').addEventListener('click', () => {
+                logInfo('click btnGenerate');
+                void generateCard();
+            });
+            (async () => {
+                try {
+                    logInfo('iframe init start');
+
+                    try {
+                        registerLocalImportEventBridge();
+                    } catch (error) {
+                        logWarn(`registerLocalImportEventBridge failed | ${String(error)}`);
+                    }
+                    await loadTemplates();
+                    logInfo('iframe init done');
+                } catch (error) {
+                    showError(`初始化失败：${String(error)}`);
+                }
+            })();
+            } catch (error) {
+                bootstrapLog(`bootstrap fatal | ${String(error)}`, 3);
+            }
+        </script>
+    </body>
+</html>

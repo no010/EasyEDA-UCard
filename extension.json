@@ -39,8 +39,18 @@
 				"menuItems": [
 					{
 						"id": "generatePcbBusinessCard",
-						"title": "Generate PCB Business Card...",
+						"title": "1. 导入名片模板...",
 						"registerFn": "generatePcbBusinessCard"
+					},
+					{
+						"id": "applyPcbBusinessCardText",
+						"title": "2. 替换名片文本...",
+						"registerFn": "applyPcbBusinessCardText"
+					},
+					{
+						"id": "generateQrCode",
+						"title": "3. 生成名片二维码...",
+						"registerFn": "generateQrCode"
 					}
 				]
 			}

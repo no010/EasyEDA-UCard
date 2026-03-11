@@ -1,5 +1,7 @@
 {
-	"dialog_title": "UCard Dialog",
+	"error_title": "Error",
+	"unexpected_error": "An unexpected error occurred, please try again."
+}"dialog_title": "UCard Dialog",
 	"input_prompt": "Enter the theoretical resistance value",
 	"input_placeholder": "e.g., 5.12k, 4700, 1M",
 	"invalid_input_error": "Invalid input. Please enter a valid resistance value (e.g., 4.7k, 1M, 100).",

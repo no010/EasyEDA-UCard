@@ -1,3 +1,5 @@
 {
-	"Generate PCB Business Card...": "Generate PCB Business Card..."
+	"1. 导入名片模板...": "1. Import Card Template...",
+	"2. 替换名片文本...": "2. Replace Card Text...",
+	"3. 生成名片二维码...": "3. Generate Card QR Code..."
 }

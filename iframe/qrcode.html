@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="zh-Hans">
+    <head>
+        <title>UCard 二维码生成</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+            :root {
+                --bg: #eef2f7;
+                --card: #ffffff;
+                --text: #1f2937;
+                --muted: #6b7280;
+                --line: #d6dde8;
+                --primary: #0f766e;
+                --primary-hover: #0b5d57;
+                --danger: #b91c1c;
+            }
+            html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; }
+            body { padding: 16px; }
+            .card {
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                padding: 16px;
+                box-shadow: 0 6px 16px rgba(13, 36, 61, 0.08);
+            }
+            .title {
+                font-size: 16px;
+                font-weight: 700;
+                margin-bottom: 4px;
+            }
+            .sub {
+                color: var(--muted);
+                font-size: 12px;
+                margin-bottom: 12px;
+            }
+            .tabs {
+                display: flex;
+                gap: 0;
+                border-bottom: 2px solid var(--line);
+                margin-bottom: 14px;
+            }
+            .tab-btn {
+                border: none;
+                background: none;
+                padding: 8px 16px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+                color: var(--muted);
+                border-bottom: 2px solid transparent;
+                margin-bottom: -2px;
+                border-radius: 0;
+            }
+            .tab-btn:hover { color: var(--text); background: none; }
+            .tab-btn.active {
+                color: var(--primary);
+                border-bottom-color: var(--primary);
+                background: none;
+            }
+            .tab-panel { display: none; }
+            .tab-panel.active { display: block; }
+            .row {
+                display: grid;
+                grid-template-columns: 80px 1fr;
+                gap: 8px;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+            label {
+                font-weight: 600;
+                font-size: 12px;
+            }
+            select, input {
+                width: 100%;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                padding: 8px 10px;
+                font: inherit;
+                outline: none;
+                background: #fff;
+                color: var(--text);
+                box-sizing: border-box;
+            }
+            select:focus, input:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+            }
+            .settings-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 14px;
+                padding-bottom: 14px;
+                border-bottom: 1px solid var(--line);
+            }
+            .settings-row .field-label {
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                margin-bottom: 4px;
+            }
+            .group-title {
+                font-size: 12px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin-bottom: 8px;
+                font-weight: 700;
+            }
+            .meta {
+                margin-bottom: 10px;
+                border: 1px dashed var(--line);
+                border-radius: 8px;
+                padding: 8px;
+                font-size: 12px;
+                color: var(--muted);
+                background: #fafbfd;
+            }
+            .error {
+                color: var(--danger);
+                font-size: 12px;
+                margin-bottom: 8px;
+                white-space: pre-wrap;
+            }
+            .is-hidden { display: none; }
+            .actions {
+                margin-top: 14px;
+                padding-top: 10px;
+                border-top: 1px solid var(--line);
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+            button {
+                border: 1px solid var(--line);
+                background: #f5f7fa;
+                color: var(--text);
+                border-radius: 8px;
+                padding: 8px 14px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+            }
+            button:hover { background: #e9edf3; }
+            button:disabled { opacity: 0.5; cursor: not-allowed; }
+            .btn-primary {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
+            .btn-primary:hover { background: var(--primary-hover); }
+            .btn-primary:disabled { background: var(--primary); opacity: 0.5; }
+
+            .img-drop-zone {
+                border: 2px dashed var(--line);
+                border-radius: 10px;
+                padding: 20px;
+                text-align: center;
+                cursor: pointer;
+                color: var(--muted);
+                font-size: 13px;
+                transition: border-color 0.2s;
+                margin-bottom: 10px;
+            }
+            .img-drop-zone:hover, .img-drop-zone.dragover { border-color: var(--primary); color: var(--primary); }
+            .img-preview {
+                max-width: 100%;
+                max-height: 160px;
+                display: block;
+                margin: 8px auto 0;
+                border-radius: 6px;
+                border: 1px solid var(--line);
+            }
+            .img-info {
+                font-size: 11px;
+                color: var(--muted);
+                text-align: center;
+                margin-top: 4px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="title">3. 生成名片二维码</div>
+            <div class="sub">生成二维码并放置到 PCB 当前鼠标位置。</div>
+
+            <div id="errorBox" class="error is-hidden"></div>
+
+            <!-- Common settings: layer + size -->
+            <div class="settings-row">
+                <div>
+                    <div class="field-label">层</div>
+                    <select id="selLayer" title="选择放置层">
+                        <option value="3">顶层丝印 (TopSilkscreen)</option>
+                        <option value="4">底层丝印 (BottomSilkscreen)</option>
+                        <option value="1">顶层铜线 (TopCopper)</option>
+                        <option value="2">底层铜线 (BottomCopper)</option>
+                    </select>
+                </div>
+                <div>
+                    <div class="field-label">尺寸 (mm)</div>
+                    <input id="inputSize" type="number" min="5" max="100" step="0.5" value="26" title="二维码尺寸（毫米）" placeholder="26" />
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="vcard">vCard 生成</button>
+                <button class="tab-btn" data-tab="image">图片导入</button>
+            </div>
+
+            <!-- vCard tab -->
+            <div id="tabVcard" class="tab-panel active">
+                <div class="group-title">vCard 字段</div>
+                <div class="meta">填写后点击「生成到 PCB」，将 vCard 3.0 格式二维码放置到鼠标位置。</div>
+
+                <div class="row">
+                    <label for="vcName">姓名 *</label>
+                    <input id="vcName" type="text" placeholder="张三" />
+                </div>
+                <div class="row">
+                    <label for="vcTitle">职位</label>
+                    <input id="vcTitle" type="text" placeholder="高级工程师" />
+                </div>
+                <div class="row">
+                    <label for="vcOrg">公司</label>
+                    <input id="vcOrg" type="text" placeholder="立创开发板" />
+                </div>
+                <div class="row">
+                    <label for="vcTel">手机</label>
+                    <input id="vcTel" type="tel" placeholder="+86-180-0000-0000" />
+                </div>
+                <div class="row">
+                    <label for="vcEmail">邮箱</label>
+                    <input id="vcEmail" type="email" placeholder="example@domain.com" />
+                </div>
+                <div class="row">
+                    <label for="vcUrl">网址</label>
+                    <input id="vcUrl" type="url" placeholder="https://example.com" />
+                </div>
+
+                <div class="actions">
+                    <button id="btnCancelVcard">取消</button>
+                    <button id="btnGenerateVcard" class="btn-primary">生成到 PCB</button>
+                </div>
+            </div>
+
+            <!-- Image tab -->
+            <div id="tabImage" class="tab-panel">
+                <div class="group-title">导入二维码图片</div>
+                <div class="meta">选择黑白二维码图片，将其转换为丝印图元放置到 PCB。建议使用高对比度 PNG 格式。</div>
+
+                <input type="file" id="fileInput" accept="image/png,image/jpeg,image/bmp,image/gif,image/webp" class="is-hidden" />
+                <div id="imgDropZone" class="img-drop-zone" tabindex="0">
+                    点击或拖放图片到此处
+                    <img id="imgPreview" class="img-preview is-hidden" alt="" />
+                    <div id="imgInfo" class="img-info is-hidden"></div>
+                </div>
+
+                <div class="actions">
+                    <button id="btnCancelImage">取消</button>
+                    <button id="btnPlaceImage" class="btn-primary" disabled>导入到 PCB</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const IFRAME_LOG_PREFIX = '[UCard][Iframe]';
+            let bootstrapEdaApi = null;
+            try { bootstrapEdaApi = window.parent?.eda || window.top?.eda || window.eda; } catch (e) { console.error(e); }
+
+            function bootstrapLog(message, type) {
+                try { bootstrapEdaApi?.sys_Log?.add?.(`${IFRAME_LOG_PREFIX} ${message}`, type || 1); } catch {}
+            }
+
+            bootstrapLog(`bootstrap start | readyState=${document.readyState}`);
+
+            try {
+            const edaApi = bootstrapEdaApi;
+            const TOPIC_CLOSE = 'UCARD_CLOSE';
+            const TOPIC_PLACE_QR_VCARD = 'UCARD_PLACE_QR_VCARD';
+            const TOPIC_PLACE_QR_IMAGE = 'UCARD_PLACE_QR_IMAGE';
+
+            const errorBox = document.getElementById('errorBox');
+
+            function logWithType(m, type) { try { if (!edaApi?.sys_Log?.add) return; edaApi.sys_Log.add(`${IFRAME_LOG_PREFIX} ${m}`, type); } catch {} }
+            const logInfo = (m) => logWithType(m, 1);
+            const logError = (m) => logWithType(m, 3);
+
+            function showError(msg) {
+                errorBox.classList.toggle('is-hidden', !msg);
+                errorBox.textContent = msg || '';
+                if (msg) logError(`showError | ${msg}`);
+            }
+
+            function pushPublic(topic, payload) {
+                if (!edaApi?.sys_MessageBus?.pushPublic) throw new Error('sys_MessageBus.pushPublic unavailable');
+                edaApi.sys_MessageBus.pushPublic(topic, payload);
+            }
+
+            function closeDialog() {
+                try { pushPublic(TOPIC_CLOSE, {}); } catch { window.close(); }
+            }
+
+            // --- Tab switching ---
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanels = { vcard: document.getElementById('tabVcard'), image: document.getElementById('tabImage') };
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+                    Object.entries(tabPanels).forEach(([key, panel]) => panel.classList.toggle('active', key === tab));
+                    showError('');
+                });
+            });
+
+            // --- vCard generation ---
+            document.getElementById('btnCancelVcard').addEventListener('click', closeDialog);
+            document.getElementById('btnGenerateVcard').addEventListener('click', () => {
+                showError('');
+                const name = document.getElementById('vcName').value.trim();
+                if (!name) { showError('姓名不能为空'); return; }
+                const sizeMm = parseFloat(document.getElementById('inputSize').value);
+                if (!(sizeMm >= 5 && sizeMm <= 100)) { showError('尺寸需在 5 ~ 100 mm 之间'); return; }
+                const layer = parseInt(document.getElementById('selLayer').value, 10);
+                const fields = {
+                    name,
+                    title: document.getElementById('vcTitle').value.trim() || undefined,
+                    org: document.getElementById('vcOrg').value.trim() || undefined,
+                    tel: document.getElementById('vcTel').value.trim() || undefined,
+                    email: document.getElementById('vcEmail').value.trim() || undefined,
+                    url: document.getElementById('vcUrl').value.trim() || undefined,
+                };
+                logInfo(`generate vCard QR | name=${name} | layer=${layer} | sizeMm=${sizeMm}`);
+                try {
+                    pushPublic(TOPIC_PLACE_QR_VCARD, { fields, sizeMm, layer, timestamp: Date.now() });
+                    logInfo('TOPIC_PLACE_QR_VCARD sent');
+                } catch (err) {
+                    showError(`无法发送请求：${String(err)}`);
+                }
+            });
+
+            // --- Image import ---
+            let pendingImageDataUrl = null;
+            let pendingImageWidth = 0;
+            let pendingImageHeight = 0;
+
+            const fileInput = document.getElementById('fileInput');
+            const imgDropZone = document.getElementById('imgDropZone');
+            const imgPreview = document.getElementById('imgPreview');
+            const imgInfo = document.getElementById('imgInfo');
+            const btnPlaceImage = document.getElementById('btnPlaceImage');
+
+            function loadImageFile(file) {
+                if (!file || !file.type.startsWith('image/')) {
+                    showError('请选择图片文件（PNG、JPG、BMP 等）');
+                    return;
+                }
+                showError('');
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const dataUrl = evt.target.result;
+                    const img = new Image();
+                    img.onload = () => {
+                        pendingImageDataUrl = dataUrl;
+                        pendingImageWidth = img.naturalWidth;
+                        pendingImageHeight = img.naturalHeight;
+                        imgPreview.src = dataUrl;
+                        imgPreview.classList.remove('is-hidden');
+                        imgInfo.textContent = `${img.naturalWidth} × ${img.naturalHeight} px | ${(file.size / 1024).toFixed(1)} KB`;
+                        imgInfo.classList.remove('is-hidden');
+                        btnPlaceImage.disabled = false;
+                        logInfo(`image loaded | w=${pendingImageWidth} h=${pendingImageHeight}`);
+                    };
+                    img.src = dataUrl;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            imgDropZone.addEventListener('click', () => fileInput.click());
+            imgDropZone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+            fileInput.addEventListener('change', (e) => { if (e.target.files[0]) loadImageFile(e.target.files[0]); });
+
+            imgDropZone.addEventListener('dragover', (e) => { e.preventDefault(); imgDropZone.classList.add('dragover'); });
+            imgDropZone.addEventListener('dragleave', () => imgDropZone.classList.remove('dragover'));
+            imgDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imgDropZone.classList.remove('dragover');
+                const file = e.dataTransfer?.files?.[0];
+                if (file) loadImageFile(file);
+            });
+
+            document.getElementById('btnCancelImage').addEventListener('click', closeDialog);
+            btnPlaceImage.addEventListener('click', () => {
+                showError('');
+                if (!pendingImageDataUrl) { showError('请先选择图片'); return; }
+                const sizeMm = parseFloat(document.getElementById('inputSize').value);
+                if (!(sizeMm >= 5 && sizeMm <= 100)) { showError('尺寸需在 5 ~ 100 mm 之间'); return; }
+                const layer = parseInt(document.getElementById('selLayer').value, 10);
+                logInfo(`place image QR | w=${pendingImageWidth} h=${pendingImageHeight} | layer=${layer} | sizeMm=${sizeMm}`);
+                try {
+                    pushPublic(TOPIC_PLACE_QR_IMAGE, {
+                        imageDataUrl: pendingImageDataUrl,
+                        naturalWidth: pendingImageWidth,
+                        naturalHeight: pendingImageHeight,
+                        sizeMm,
+                        layer,
+                        timestamp: Date.now(),
+                    });
+                    logInfo('TOPIC_PLACE_QR_IMAGE sent');
+                } catch (err) {
+                    showError(`无法发送请求：${String(err)}`);
+                }
+            });
+
+            bootstrapLog('iframe init complete');
+            } catch (error) {
+                bootstrapLog(`iframe init error | ${String(error)}`, 3);
+                document.body.innerHTML += `<div style="color:red;padding:12px;font-size:12px">初始化错误：${String(error)}</div>`;
+            }
+        </script>
+    </body>
+</html>
