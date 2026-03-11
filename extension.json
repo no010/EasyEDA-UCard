@@ -2,8 +2,8 @@
 	"name": "easyeda-ucard",
 	"uuid": "7f1de4f8d38a4d9e9a7f4f0f0fda2c61",
 	"displayName": "UCard",
-	"description": "仅限 PCB 编辑器的开发者名片快速生成插件",
-	"version": "0.1.0",
+	"description": "工程师专属PCB艺术名片快速生成插件",
+	"version": "0.1.1",
 	"publisher": "",
 	"engines": {
 		"eda": "^3.0.0"

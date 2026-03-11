@@ -20,7 +20,7 @@
 
 ### 功能演示
 
-![EasyEDA-UCard 功能演示](./images/demo.gif)
+![EasyEDA-UCard 功能演示](./images/demo1.gif)
 
 ## 安装方法
 
